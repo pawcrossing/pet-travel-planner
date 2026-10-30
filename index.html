@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pet Travel Date Planner</title>
+<meta name="description" content="Work out the key dates for taking your dog, cat or ferret from Great Britain to the EU: animal health certificate window, rabies wait, tapeworm treatment and return deadline.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f7f9;
+    --ink: #0b0d12;
+    --muted: #5b6270;
+    --line: #e3e6eb;
+    --blue: #1f5eff;
+    --blue-soft: #eaf0ff;
+    --red: #d92d20;
+    --red-soft: #fdecea;
+    --amber: #b54708;
+    --amber-soft: #fef4e6;
+    --green: #067647;
+    --green-soft: #e8f6ee;
+    --radius: 14px;
+    --spring: cubic-bezier(.34, 1.56, .64, 1);
+    --ease: cubic-bezier(.22, 1, .36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+
+  header { padding: 56px 0 28px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 600; color: var(--blue);
+    background: var(--blue-soft); padding: 5px 12px; border-radius: 999px;
+  }
+  h1 { font-size: clamp(30px, 6vw, 44px); line-height: 1.1; letter-spacing: -.02em; margin: 16px 0 12px; }
+  .lede { color: var(--muted); font-size: 18px; max-width: 580px; }
+
+  .card {
+    background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 24px; margin-bottom: 20px;
+  }
+  .card h2 { font-size: 18px; display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .card h2 svg { color: var(--blue); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .full { grid-column: 1 / -1; }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .hint { font-weight: 400; color: var(--muted); }
+  input, select {
+    width: 100%; font: inherit; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px;
+    transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+  }
+  input:focus, select:focus { outline: none; border-color: var(--blue); background: var(--bg); box-shadow: 0 0 0 4px var(--blue-soft); }
+
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label {
+    margin: 0; cursor: pointer; font-weight: 500; padding: 10px 16px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--surface);
+    transition: transform .25s var(--spring), background .2s, border-color .2s, color .2s;
+  }
+  .seg label:hover { transform: scale(1.03); }
+  .seg label:active { transform: scale(.96); }
+  .seg input:checked + label { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .seg input:focus-visible + label { box-shadow: 0 0 0 4px var(--blue-soft); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 14px 22px; cursor: pointer;
+    background: var(--blue); color: #fff; text-decoration: none;
+    transition: transform .25s var(--spring), box-shadow .25s var(--ease), background .2s;
+  }
+  .btn:hover { transform: scale(1.03); box-shadow: 0 8px 24px rgba(31, 94, 255, .25); }
+  .btn:active { transform: scale(.97); }
+  .btn.ghost { background: var(--bg); color: var(--ink); border: 1px solid var(--line); }
+  .btn.ghost:hover { box-shadow: 0 6px 18px rgba(11, 13, 18, .08); }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+
+  #results { display: none; }
+  #results.show { display: block; }
+
+  .check {
+    display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; margin-bottom: 8px;
+    font-size: 15px;
+  }
+  .check svg { flex: none; margin-top: 2px; }
+  .check.ok { background: var(--green-soft); color: var(--green); }
+  .check.warn { background: var(--amber-soft); color: var(--amber); }
+  .check.error { background: var(--red-soft); color: var(--red); }
+  .check span { color: var(--ink); }
+
+  .timeline { list-style: none; position: relative; margin-left: 8px; }
+  .timeline::before { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+  .timeline li { position: relative; padding: 0 0 18px 28px; }
+  .timeline li::before {
+    content: ""; position: absolute; left: 0; top: 6px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--blue);
+  }
+  .timeline li.key::before { background: var(--blue); }
+  .timeline .when { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .timeline .what { color: var(--muted); }
+
+  .note { font-size: 14px; color: var(--muted); }
+  .note a { color: var(--blue); }
+  .cta { background: var(--ink); color: #fff; border: 0; }
+  .cta p { color: #c8ccd4; margin-bottom: 16px; }
+  .cta h2 svg { color: #8fb0ff; }
+
+  footer { padding: 24px 0 56px; font-size: 13px; color: var(--muted); }
+  footer a { color: var(--muted); }
+
+  /* Motion: staggered entrance, fade-out on recalculation */
+  .rise { opacity: 0; transform: translateY(14px) scale(.98); animation: rise .6s var(--ease) forwards; animation-delay: calc(var(--i, 0) * 70ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  .leaving { animation: leave .22s var(--ease) forwards; }
+  @keyframes leave { to { opacity: 0; transform: translateY(-8px) scale(.98); } }
+  @media (prefers-reduced-motion: reduce) {
+    .rise, .leaving { animation: none; opacity: 1; transform: none; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<!-- Icons: Lucide (ISC licence), inlined -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></symbol>
+  <symbol id="i-paw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></symbol>
+  <symbol id="i-syringe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
+  <symbol id="i-printer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header>
+    <span class="tag rise" style="--i:0"><svg width="14" height="14"><use href="#i-plane"/></svg>Great Britain to the EU</span>
+    <h1 class="rise" style="--i:1">Pet travel date planner</h1>
+    <p class="lede rise" style="--i:2">Since 22 April 2026, people living in England, Scotland and Wales need a new animal health certificate for every trip to the EU. Enter your dates and get every deadline in one place.</p>
+  </header>
+
+  <form id="form" novalidate>
+    <section class="card rise" style="--i:3">
+      <h2><svg width="20" height="20"><use href="#i-plane"/></svg>Your trip</h2>
+      <div class="grid">
+        <div class="full">
+          <label>Pet</label>
+          <div class="seg" role="radiogroup">
+            <input type="radio" name="pet" id="pet-dog" value="dog" checked><label for="pet-dog">Dog</label>
+            <input type="radio" name="pet" id="pet-cat" value="cat"><label for="pet-cat">Cat</label>
+            <input type="radio" name="pet" id="pet-ferret" value="ferret"><label for="pet-ferret">Ferret</label>
+          </div>
+        </div>
+        <div class="full">
+          <label for="destination">Destination</label>
+          <select id="destination" name="destination"></select>
+        </div>
+        <div>
+          <label for="arriveEU">Arrive in the EU <span class="hint">date and time</span></label>
+          <input type="datetime-local" id="arriveEU" name="arriveEU" required>
+        </div>
+        <div>
+          <label for="returnGB">Arrive back in Great Britain</label>
+          <input type="datetime-local" id="returnGB" name="returnGB" required>
+        </div>
+      </div>
+    </section>
+
+    <section class="card rise" style="--i:4">
+      <h2><svg width="20" height="20"><use href="#i-syringe"/></svg>Microchip and rabies</h2>
+      <div class="grid">
+        <div>
+          <label for="microchipDate">Microchip date</label>
+          <input type="date" id="microchipDate" name="microchipDate" required>
+        </div>
+        <div>
+          <label for="birthDate">Date of birth <span class="hint">optional</span></label>
+          <input type="date" id="birthDate" name="birthDate">
+        </div>
+        <div>
+          <label for="rabiesDate">Rabies vaccination date</label>
+          <input type="date" id="rabiesDate" name="rabiesDate" required>
+        </div>
+        <div>
+          <label for="rabiesValidUntil">Rabies valid until <span class="hint">optional</span></label>
+          <input type="date" id="rabiesValidUntil" name="rabiesValidUntil">
+        </div>
+        <div class="full">
+          <label>This vaccination was</label>
+          <div class="seg" role="radiogroup">
+            <input type="radio" name="rabiesType" id="rt-primary" value="primary"><label for="rt-primary">A first vaccination</label>
+            <input type="radio" name="rabiesType" id="rt-booster" value="booster" checked><label for="rt-booster">A booster, no break in cover</label>
+          </div>
+        </div>
+        <div class="full">
+          <label for="ahcDate">Vet appointment for the certificate <span class="hint">optional, if already booked</span></label>
+          <input type="date" id="ahcDate" name="ahcDate">
+        </div>
+      </div>
+    </section>
+
+    <div class="actions rise" style="--i:5">
+      <button class="btn" type="submit">Work out my dates<svg width="18" height="18"><use href="#i-arrow"/></svg></button>
+    </div>
+  </form>
+
+  <div id="results" aria-live="polite"></div>
+
+  <footer>
+    <p>Not veterinary or legal advice. These dates are worked out from what you enter and the rules published on GOV.UK, checked <span id="checked"></span>. Always confirm with your vet and your ferry, train or airline before you travel. Nothing you type leaves your browser.</p>
+    <p style="margin-top:8px">Sources:
+      <a href="https://www.gov.uk/taking-your-pet-abroad" rel="noopener" target="_blank">Taking your pet abroad</a> ·
+      <a href="https://www.gov.uk/taking-your-pet-abroad/getting-an-animal-health-certificate" rel="noopener" target="_blank">Animal health certificate</a> ·
+      <a href="https://www.gov.uk/taking-your-pet-abroad/tapeworm-treatment-for-dogs" rel="noopener" target="_blank">Tapeworm (outbound)</a> ·
+      <a href="https://www.gov.uk/bring-pet-to-great-britain/tapeworm-treatment-dogs" rel="noopener" target="_blank">Tapeworm (return)</a> ·
+      <a href="https://www.gov.uk/government/news/new-eu-rules-for-pet-travel-for-gb-residents" rel="noopener" target="_blank">April 2026 change</a>
+    </p>
+  </footer>
+</div>
+
+<script src="rules.js"></script>
+<script>
+(function () {
+  const R = window.PetTravelRules;
+  // Replace with the real Etsy listing URL before publishing.
+  const PLANNER_URL = 'https://www.etsy.com/listing/REPLACE_WITH_ETSY_LISTING';
+
+  const $ = (s) => document.querySelector(s);
+  $('#checked').textContent = new Date(R.RULES_CHECKED).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const sel = $('#destination');
+  R.DESTINATIONS.forEach(([code, name]) => {
+    const o = document.createElement('option');
+    o.value = code; o.textContent = name;
+    if (code === 'FR') o.selected = true;
+    sel.appendChild(o);
+  });
+
+  const fmtDay = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const fmtTime = (d) => `${fmtDay(d)}, ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const icon = { ok: 'i-check', warn: 'i-alert', error: 'i-x' };
+
+  let lastEvents = [];
+
+  function render(res, input) {
+    const d = res.dates;
+    const country = (R.DESTINATIONS.find(([c]) => c === input.destination) || [])[1];
+    let i = 0;
+    const blocks = [];
+
+    blocks.push(`<section class="card rise" style="--i:${i++}">
+      <h2><svg width="20" height="20"><use href="#i-list"/></svg>Checks</h2>
+      ${res.checks.map((c) => `<div class="check ${c.level}"><svg width="18" height="18"><use href="#${icon[c.level]}"/></svg><span>${esc(c.text)}</span></div>`).join('')}
+    </section>`);
+
+    if (d.ahcEarliest) {
+      // [sortDate, cssClass, when, what]
+      const rows = [];
+      const arrive = R.parseDateTime(input.arriveEU);
+      const ret = R.parseDateTime(input.returnGB);
+      if (d.earliestTravel) rows.push([d.earliestTravel, '', fmtDay(d.earliestTravel), 'Earliest day your pet can travel after a first rabies vaccination (vaccination day counted as day 0, confirm with your vet)']);
+      rows.push([d.ahcEarliest, 'key', `${fmtDay(d.ahcEarliest)} to ${fmtDay(d.ahcLatest)}`, 'Get the animal health certificate from an official vet (OV). The issue date is day 1 and you must enter the EU by day 10. Book early, many practices fill up.']);
+      if (d.tapewormOut) rows.push([d.tapewormOut.from, 'key', `${fmtTime(d.tapewormOut.from)} to ${fmtTime(d.tapewormOut.to)}`, `Tapeworm treatment by a vet, recorded on the certificate. Required for dogs entering ${esc(country)}.`]);
+      rows.push([arrive, '', fmtTime(arrive), `Arrive in ${esc(country)}`]);
+      if (d.tapewormBeforeLeaving) rows.push([d.tapewormBeforeLeaving.from, 'key', `${fmtTime(d.tapewormBeforeLeaving.from)} to ${fmtTime(d.tapewormBeforeLeaving.to)}`, 'Option A, short trip: one tapeworm treatment from your UK vet in this window also covers your return.']);
+      if (d.tapewormReturn) {
+        const from = d.tapewormBeforeLeaving ? arrive : d.tapewormReturn.from;
+        rows.push([from, 'key', `${fmtTime(from)} to ${fmtTime(d.tapewormReturn.to)}`, d.tapewormBeforeLeaving
+          ? 'Option B: tapeworm treatment by a vet abroad, at least 24 hours before you arrive back in Great Britain.'
+          : 'Tapeworm treatment by a vet abroad, 24 to 120 hours before you arrive back in Great Britain.']);
+      }
+      rows.push([ret, '', fmtTime(ret), 'Arrive back in Great Britain']);
+      if (d.retreatBy) rows.push([d.retreatBy, '', fmtDay(d.retreatBy), 'Treat your dog for tapeworm again within 28 days of returning']);
+      rows.push([d.returnBy, '', fmtDay(d.returnBy), `Latest return date on this certificate (6 months from ${d.returnByBasis === 'appointment' ? 'your appointment' : 'the earliest possible issue date'})`]);
+      rows.sort((a, b) => a[0] - b[0]);
+
+      blocks.push(`<section class="card rise" style="--i:${i++}">
+        <h2><svg width="20" height="20"><use href="#i-calendar"/></svg>Your dates</h2>
+        <ul class="timeline">${rows.map(([, k, w, t]) => `<li class="${k}"><div class="when">${w}</div><div class="what">${t}</div></li>`).join('')}</ul>
+        <div class="actions"><button class="btn ghost" type="button" id="ics"><svg width="18" height="18"><use href="#i-calendar"/></svg>Add to calendar</button></div>
+      </section>`);
+    }
+
+    // The planner card stays hidden until a real Etsy link is set.
+    if (!PLANNER_URL.includes('REPLACE')) blocks.push(`<section class="card cta rise" style="--i:${i++}">
+      <h2><svg width="20" height="20"><use href="#i-printer"/></svg>Want it all on paper?</h2>
+      <p>The printable planner turns these dates into a week-by-week checklist, with questions to ask your vet, a documents list and a return-trip log.</p>
+      <a class="btn" href="${PLANNER_URL}" target="_blank" rel="noopener">See the printable planner<svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </section>`);
+
+    const box = $('#results');
+    box.innerHTML = blocks.join('');
+    box.classList.add('show');
+    const ics = $('#ics');
+    if (ics) ics.addEventListener('click', downloadICS);
+    box.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  function downloadICS() {
+    const blob = new Blob([R.toICS(lastEvents)], { type: 'text/calendar' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pet-travel-dates.ics';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  $('#form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const input = Object.fromEntries(f.entries());
+    const res = R.plan(input);
+    lastEvents = res.events;
+    const box = $('#results');
+    if (box.classList.contains('show') && box.children.length) {
+      [...box.children].forEach((el) => el.classList.add('leaving'));
+      setTimeout(() => render(res, input), 220);
+    } else {
+      render(res, input);
+    }
+  });
+})();
+</script>
+</body>
+</html>
