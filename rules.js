@@ -112,14 +112,15 @@
       }
     }
 
-    // 21 days after primary vaccination (vaccination day = day 0).
+    // At least 21 full days after primary vaccination. Day 1 is the day after the vaccination,
+    // so travel starts on day 22. GOV.UK's example: 1 Oct + a 30-day vaccine = travel from 1 Nov.
     if (input.rabiesType === 'primary') {
-      const earliest = addDays(rabies, 21);
+      const earliest = addDays(rabies, 22);
       dates.earliestTravel = earliest;
       if (arriveDay < earliest) {
-        add('error', 'wait', 'You need to wait at least 21 days after a first rabies vaccination before travelling.');
+        add('error', 'wait', 'You need to wait at least 21 full days after a first rabies vaccination before travelling. Some vaccines take longer to work, so ask your vet.');
       } else {
-        add('ok', 'wait', 'The 21-day wait after the first rabies vaccination is complete.');
+        add('ok', 'wait', 'The minimum 21 full days after the first rabies vaccination are complete. Some vaccines take longer to work, so check with your vet.');
       }
     } else {
       add('ok', 'wait', 'Booster with no break in cover: no waiting period needed.');

@@ -271,7 +271,7 @@
       const rows = [];
       const arrive = R.parseDateTime(input.arriveEU);
       const ret = R.parseDateTime(input.returnGB);
-      if (d.earliestTravel) rows.push([d.earliestTravel, '', fmtDay(d.earliestTravel), 'Earliest day your pet can travel after a first rabies vaccination (vaccination day counted as day 0, confirm with your vet)']);
+      if (d.earliestTravel) rows.push([d.earliestTravel, '', fmtDay(d.earliestTravel), 'Earliest day your pet can travel after a first rabies vaccination (minimum 21 full days. Some vaccines take longer, so confirm with your vet)']);
       rows.push([d.ahcEarliest, 'key', `${fmtDay(d.ahcEarliest)} to ${fmtDay(d.ahcLatest)}`, 'Get the animal health certificate from an official vet (OV). The issue date is day 1 and you must enter the EU by day 10. Book early, many practices fill up.']);
       if (d.tapewormOut) rows.push([d.tapewormOut.from, 'key', `${fmtTime(d.tapewormOut.from)} to ${fmtTime(d.tapewormOut.to)}`, `Tapeworm treatment by a vet, recorded on the certificate. Required for dogs entering ${esc(country)}.`]);
       rows.push([arrive, '', fmtTime(arrive), `Arrive in ${esc(country)}`]);
