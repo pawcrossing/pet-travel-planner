@@ -227,6 +227,7 @@
       <a href="https://www.gov.uk/bring-pet-to-great-britain/tapeworm-treatment-dogs" rel="noopener" target="_blank">Tapeworm (return)</a> ·
       <a href="https://www.gov.uk/government/news/new-eu-rules-for-pet-travel-for-gb-residents" rel="noopener" target="_blank">April 2026 change</a>
     </p>
+    <p id="analytics-note" style="margin-top:8px" hidden>We count visits and button clicks anonymously with GoatCounter. No cookies, and the dates you enter are not sent anywhere.</p>
   </footer>
 </div>
 
@@ -236,6 +237,19 @@
   const R = window.PetTravelRules;
   // Replace with the real Etsy listing URL before publishing.
   const PLANNER_URL = 'https://www.etsy.com/listing/REPLACE_WITH_ETSY_LISTING';
+  // Replace with the GoatCounter site code to turn on anonymous counts.
+  const GOATCOUNTER_CODE = 'pawcrossing';
+  const countEvent = (name) => {
+    if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: name, event: true });
+  };
+  if (!GOATCOUNTER_CODE.includes('REPLACE')) {
+    const gc = document.createElement('script');
+    gc.async = true;
+    gc.src = 'https://gc.zgo.at/count.js';
+    gc.dataset.goatcounter = `https://${GOATCOUNTER_CODE}.goatcounter.com/count`;
+    document.head.appendChild(gc);
+    document.querySelector('#analytics-note').hidden = false;
+  }
 
   const $ = (s) => document.querySelector(s);
   $('#checked').textContent = new Date(R.RULES_CHECKED).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -298,7 +312,7 @@
     if (!PLANNER_URL.includes('REPLACE')) blocks.push(`<section class="card cta rise" style="--i:${i++}">
       <h2><svg width="20" height="20"><use href="#i-printer"/></svg>Want it all on paper?</h2>
       <p>The printable planner turns these dates into a week-by-week checklist, with questions to ask your vet, a documents list and a return-trip log.</p>
-      <a class="btn" href="${PLANNER_URL}" target="_blank" rel="noopener">See the printable planner<svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+      <a class="btn" id="planner-link" href="${PLANNER_URL}" target="_blank" rel="noopener">See the printable planner<svg width="18" height="18"><use href="#i-arrow"/></svg></a>
     </section>`);
 
     const box = $('#results');
@@ -306,6 +320,8 @@
     box.classList.add('show');
     const ics = $('#ics');
     if (ics) ics.addEventListener('click', downloadICS);
+    const plannerLink = $('#planner-link');
+    if (plannerLink) plannerLink.addEventListener('click', () => countEvent('planner-click'));
     box.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
 
@@ -323,6 +339,7 @@
     const f = new FormData(e.target);
     const input = Object.fromEntries(f.entries());
     const res = R.plan(input);
+    if (input.arriveEU) countEvent('calculate');
     lastEvents = res.events;
     const box = $('#results');
     if (box.classList.contains('show') && box.children.length) {
